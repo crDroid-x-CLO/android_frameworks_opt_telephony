@@ -877,6 +877,11 @@ public class SatelliteController extends Handler {
      * @param featureFlags The feature flag.
      */
     public static void make(@NonNull Context context, @NonNull FeatureFlags featureFlags) {
+        if (!context.getPackageManager().hasSystemFeature(
+                PackageManager.FEATURE_TELEPHONY_SATELLITE)) {
+            loge("SatelliteController is not created.");
+            return;
+        }
         if (sInstance == null) {
             if (featureFlags.threadShred()) {
                 sInstance = new SatelliteController(

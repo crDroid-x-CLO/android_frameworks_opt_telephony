@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.internal.telephony.emergency;
 
 import android.os.AsyncResult;
@@ -235,7 +241,8 @@ public class RadioOnStateListener {
         // Register for RADIO_OFF to handle cases where emergency call is dialed before
         // we receive UNSOL_RESPONSE_RADIO_STATE_CHANGED with RADIO_OFF.
         registerForRadioOff();
-        if (mSatelliteController.isSatelliteEnabledOrBeingEnabled()) {
+        if (mSatelliteController != null
+                && mSatelliteController.isSatelliteEnabledOrBeingEnabled()) {
             // Register for satellite modem state changed to notify when satellite is disabled.
             registerForSatelliteEnabledChanged();
         }
@@ -406,7 +413,8 @@ public class RadioOnStateListener {
                 Rlog.d(TAG, "Trying (again) to turn the radio on and satellite modem off.");
                 mPhone.setRadioPower(true, mForEmergencyCall, mSelectedPhoneForEmergencyCall,
                         false);
-                if (mSatelliteController.isSatelliteEnabledOrBeingEnabled()) {
+                if (mSatelliteController != null
+                        && mSatelliteController.isSatelliteEnabledOrBeingEnabled()) {
                     mSatelliteController.requestSatelliteEnabled(
                             false /* enableSatellite */, false /* enableDemoMode */,
                             false /* isEmergency*/,
@@ -511,11 +519,15 @@ public class RadioOnStateListener {
     }
 
     private void registerForSatelliteEnabledChanged() {
-        mSatelliteController.registerForSatelliteModemStateChanged(mSatelliteCallback);
+        if (mSatelliteController != null) {
+            mSatelliteController.registerForSatelliteModemStateChanged(mSatelliteCallback);
+        }
     }
 
     private void unregisterForSatelliteEnabledChanged() {
-        mSatelliteController.unregisterForModemStateChanged(mSatelliteCallback);
+        if (mSatelliteController != null) {
+            mSatelliteController.unregisterForModemStateChanged(mSatelliteCallback);
+        }
         mHandler.removeMessages(MSG_SATELLITE_ENABLED_CHANGED);
     }
 

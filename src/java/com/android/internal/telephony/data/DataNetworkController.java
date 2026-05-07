@@ -16,8 +16,10 @@
 
 // QTI_BEGIN: 2025-02-25: Telephony: Fix license marking
 /*
- * Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+// QTI_END: 2025-02-25: Telephony: Fix license marking
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+// QTI_BEGIN: 2025-02-25: Telephony: Fix license marking
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -2381,11 +2383,13 @@ public class DataNetworkController extends Handler {
         if (mServiceState.isUsingNonTerrestrialNetwork() && networkRequest.hasCapability(
                 NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)) {
 
-            int dataPolicy;
+            int dataPolicy = CarrierConfigManager.SATELLITE_DATA_SUPPORT_ONLY_RESTRICTED;
             if (mFeatureFlags.dataServiceCheck()) {
                 final SatelliteController satelliteController = SatelliteController.getInstance();
-                dataPolicy = satelliteController.getSatelliteDataServicePolicyForPlmn(mSubId,
-                        mPhone.getServiceState().getOperatorNumeric());
+                if (satelliteController != null) {
+                    dataPolicy = satelliteController.getSatelliteDataServicePolicyForPlmn(mSubId,
+                            mPhone.getServiceState().getOperatorNumeric());
+                }
             } else {
                 dataPolicy = mDataConfigManager.getSatelliteDataSupportMode();
             }

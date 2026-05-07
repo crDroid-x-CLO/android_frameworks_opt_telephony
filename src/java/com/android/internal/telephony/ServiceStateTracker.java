@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-/* Changes from Qualcomm Innovation Center, Inc. are provided under the following license:
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -40,6 +41,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.hardware.radio.V1_0.CellInfoType;
 import android.os.AsyncResult;
@@ -1275,7 +1277,9 @@ public class ServiceStateTracker extends Handler {
         mDesiredPowerState = power;
         setPowerStateToDesired(forEmergencyCall, isSelectedPhoneForEmergencyCall, forceApply);
         if (mDesiredPowerState) {
-            SatelliteController.getInstance().onSetCellularRadioPowerStateRequested(true);
+            if (SatelliteController.getInstance() != null) {
+                SatelliteController.getInstance().onSetCellularRadioPowerStateRequested(true);
+            }
         }
     }
 
@@ -1444,7 +1448,9 @@ public class ServiceStateTracker extends Handler {
                 ar = (AsyncResult) msg.obj;
                 if (ar.exception != null) {
                     loge("EVENT_RADIO_POWER_OFF_DONE: exception=" + ar.exception);
-                    SatelliteController.getInstance().onPowerOffCellularRadioFailed();
+                    if (SatelliteController.getInstance() != null) {
+                        SatelliteController.getInstance().onPowerOffCellularRadioFailed();
+                    }
                 }
                 break;
 
@@ -3056,10 +3062,14 @@ public class ServiceStateTracker extends Handler {
         }
 
         String satellitePlmn = null;
-        SatelliteModemStateListener satelliteModemStateListener = getSatelliteModemStateListener();
-        if (satelliteModemStateListener != null
-                && satelliteModemStateListener.isInConnectedState()) {
-            satellitePlmn = getSatelliteDisplayName();
+
+        if (isSatelliteAvailableOnDevice()) {
+            SatelliteModemStateListener satelliteModemStateListener =
+                    getSatelliteModemStateListener();
+            if (satelliteModemStateListener != null
+                    && satelliteModemStateListener.isInConnectedState()) {
+                satellitePlmn = getSatelliteDisplayName();
+            }
         }
         log("updateCarrierDisplayName: satellitePlmn=" + satellitePlmn);
 
@@ -3231,6 +3241,16 @@ public class ServiceStateTracker extends Handler {
                 .setPlmn(plmn)
                 .setShowPlmn(showPlmn)
                 .build();
+    }
+
+    private boolean isSatelliteAvailableOnDevice() {
+        PackageManager pm = mPhone.getContext().getPackageManager();
+        if (pm == null) {
+            // For some reason package manger is not available.. This will fail internally anyway,
+            // so do not throw error and allow.
+            return true;
+        }
+        return pm.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SATELLITE, 0);
     }
 
     private void updateSatelliteDisplayOverride() {
@@ -3635,7 +3655,9 @@ public class ServiceStateTracker extends Handler {
 
         updateNrFrequencyRangeFromPhysicalChannelConfigs(mLastPhysicalChannelConfigList, mNewSS);
         updateNrStateFromPhysicalChannelConfigs(mLastPhysicalChannelConfigList, mNewSS);
-        updateNtnCapability();
+        if (isSatelliteAvailableOnDevice()) {
+            updateNtnCapability();
+        }
 
         if (TelephonyUtils.IS_DEBUGGABLE && mPhone.getTelephonyTester() != null) {
             mPhone.getTelephonyTester().overrideServiceState(mNewSS);
@@ -5215,7 +5237,9 @@ public class ServiceStateTracker extends Handler {
      */
     public void powerOffRadioSafely() {
         synchronized (this) {
-            SatelliteController.getInstance().onSetCellularRadioPowerStateRequested(false);
+            if (SatelliteController.getInstance() != null) {
+                SatelliteController.getInstance().onSetCellularRadioPowerStateRequested(false);
+            }
             if (DomainSelectionResolver.getInstance().isDomainSelectionSupported()) {
                 EmergencyStateTracker.getInstance().onCellularRadioPowerOffRequested();
             }

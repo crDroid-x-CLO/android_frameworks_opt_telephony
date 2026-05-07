@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.internal.telephony;
 
 import static android.Manifest.permission.SEND_SMS_NO_CONFIRMATION;
@@ -2375,13 +2381,13 @@ public abstract class SMSDispatcher extends Handler {
     public boolean shouldBlockPremiumSmsInSatelliteMode() {
         SatelliteController sc = SatelliteController.getInstance();
 
-        if (sc.isSatelliteBeingEnabled()) {
+        if (sc != null && sc.isSatelliteBeingEnabled()) {
             Rlog.d(TAG, "shouldBlockPremiumSmsInSatelliteMode: block premium sms when "
                     + "satellite is being enabled");
             return true;
         }
 
-        if (sc.isSatelliteEnabled()) {
+        if (sc != null && sc.isSatelliteEnabled()) {
             int satelliteSubId = sc.getSelectedSatelliteSubId();
             int[] services = sc.getSupportedServicesOnCarrierRoamingNtn(satelliteSubId);
             boolean isSmsSupported = ArrayUtils.contains(

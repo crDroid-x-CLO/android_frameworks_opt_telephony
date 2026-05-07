@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.internal.telephony;
 
 import static com.android.internal.telephony.SmsResponse.NO_ERROR_CODE;
@@ -1266,8 +1272,9 @@ public class SmsDispatchersController extends Handler {
 
     private void notifySmsSentToDatagramDispatcher(
             long messageId, boolean isLastSmsPart, boolean success) {
-        if (SatelliteController.getInstance().shouldSendSmsToDatagramDispatcher(mPhone)
-                && isLastSmsPart) {
+        SatelliteController satelliteController = SatelliteController.getInstance();
+        if (satelliteController!= null
+                && satelliteController.shouldSendSmsToDatagramDispatcher(mPhone) && isLastSmsPart) {
             DatagramDispatcher.getInstance().onSendSmsDone(
                     mPhone.getSubId(), messageId, success);
         }
@@ -1877,11 +1884,15 @@ public class SmsDispatchersController extends Handler {
                 messageUri, persistMessage, priority, expectMore, validityPeriod, messageId,
                 skipShortCodeCheck, false);
 
-        if (SatelliteController.getInstance().shouldSendSmsToDatagramDispatcher(mPhone)) {
+        SatelliteController satelliteController = SatelliteController.getInstance();
+
+        if (satelliteController != null
+                && satelliteController.shouldSendSmsToDatagramDispatcher(mPhone)) {
             // Send P2P SMS using carrier roaming NB IOT NTN
             DatagramDispatcher.getInstance().sendSms(pendingRequest);
             return;
-        } else if (SatelliteController.getInstance().isInCarrierRoamingNbIotNtn()) {
+        } else if (satelliteController != null
+                && satelliteController.isInCarrierRoamingNbIotNtn()) {
             Rlog.d(TAG, "Block SMS in carrier roaming NB IOT NTN mode.");
             // Block SMS in satellite mode if P2P SMS is not supported.
             triggerSentIntentForFailure(pendingRequest.sentIntents);
@@ -2046,11 +2057,15 @@ public class SmsDispatchersController extends Handler {
                 null, 0, parts, messageUri, persistMessage, priority, expectMore,
                 validityPeriod, messageId, false, false);
 
-        if (SatelliteController.getInstance().shouldSendSmsToDatagramDispatcher(mPhone)) {
+        SatelliteController satelliteController = SatelliteController.getInstance();
+
+        if (satelliteController != null
+                && satelliteController.shouldSendSmsToDatagramDispatcher(mPhone)) {
             // Send multipart P2P SMS using carrier roaming NB IOT NTN
             DatagramDispatcher.getInstance().sendSms(pendingRequest);
             return;
-        } else if (SatelliteController.getInstance().isInCarrierRoamingNbIotNtn()) {
+        } else if (satelliteController != null
+                && satelliteController.isInCarrierRoamingNbIotNtn()) {
             Rlog.d(TAG, "Block SMS in carrier roaming NB IOT NTN mode.");
             // Block SMS in satellite mode if P2P SMS is not supported.
             triggerSentIntentForFailure(pendingRequest.sentIntents);
@@ -2267,7 +2282,9 @@ public class SmsDispatchersController extends Handler {
      * to trigger SMSC to send all pending SMS to the particular subscription.
      */
     public void sendMtSmsPollingMessage() {
-        if (!SatelliteController.getInstance().shouldSendSmsToDatagramDispatcher(mPhone)) {
+        SatelliteController satelliteController = SatelliteController.getInstance();
+        if (satelliteController != null
+                && !satelliteController.shouldSendSmsToDatagramDispatcher(mPhone)) {
             logd("sendMtSmsPollingMessage: not in roaming nb iot ntn");
             return;
         }
@@ -2294,7 +2311,8 @@ public class SmsDispatchersController extends Handler {
                 asArrayList(null), false, null, 0, asArrayList(mtSmsPollingText), null, false, 0,
                 false, 5, 0L, true, true);
 
-        if (SatelliteController.getInstance().shouldSendSmsToDatagramDispatcher(mPhone)) {
+        if (satelliteController != null
+                && satelliteController.shouldSendSmsToDatagramDispatcher(mPhone)) {
             DatagramDispatcher.getInstance().sendSms(pendingRequest);
         }
     }

@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.internal.telephony.metrics;
 
 import static com.android.internal.telephony.InboundSmsHandler.SOURCE_INJECTED_FROM_IMS;
@@ -429,7 +435,8 @@ public class SmsStats {
     }
 
     private boolean isNbIotNtn(Phone phone) {
-        return SatelliteController.getInstance().isInCarrierRoamingNbIotNtn(phone);
+        return SatelliteController.getInstance() != null
+                && SatelliteController.getInstance().isInCarrierRoamingNbIotNtn(phone);
     }
 
     private void loge(String format, Object... args) {

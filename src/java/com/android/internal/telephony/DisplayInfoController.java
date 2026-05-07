@@ -14,9 +14,16 @@
  * limitations under the License.
  */
 
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.internal.telephony;
 
 import android.annotation.NonNull;
+import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PersistableBundle;
@@ -118,8 +125,11 @@ public class DisplayInfoController extends Handler {
 
         // To Support Satellite bandwidth constrained data capability status at telephony
         // display info
-        log("register for satellite network callback");
-        mNetworkTypeController.registerForSatelliteNetwork();
+        if (mPhone.getContext().getPackageManager()
+                .hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SATELLITE)) {
+            log("register for satellite network callback");
+            mNetworkTypeController.registerForSatelliteNetwork();
+        }
     }
 
     /**

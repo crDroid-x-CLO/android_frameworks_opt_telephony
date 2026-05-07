@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.internal.telephony.emergency;
 
 import static android.telecom.Connection.STATE_ACTIVE;
@@ -2367,6 +2373,8 @@ public class EmergencyStateTracker {
     @VisibleForTesting
     public boolean shouldExitSatelliteMode() {
         final SatelliteController satelliteController = SatelliteController.getInstance();
+
+        if (satelliteController == null) return false;
 
         if (!satelliteController.isSatelliteEnabledOrBeingEnabled()) {
             return false;

@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/*
+ * Changes from Qualcomm Technologies, Inc. are provided under the following license:
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ */
+
 package com.android.internal.telephony.emergency;
 
 import android.content.Context;
@@ -103,7 +109,8 @@ public class RadioOnHelper implements RadioOnStateListener.Callback {
                     && phone == phoneForEmergencyCall, timeoutCallbackInterval);
         }
         powerOnRadio(forEmergencyCall, phoneForEmergencyCall, isTestEmergencyNumber);
-        if (SatelliteController.getInstance().isSatelliteEnabledOrBeingEnabled()) {
+        SatelliteController satelliteController = SatelliteController.getInstance();
+        if (satelliteController != null && satelliteController.isSatelliteEnabledOrBeingEnabled()) {
             powerOffSatellite();
         }
     }
@@ -152,6 +159,7 @@ public class RadioOnHelper implements RadioOnStateListener.Callback {
      */
     private void powerOffSatellite() {
         SatelliteController satelliteController = SatelliteController.getInstance();
+        if (satelliteController == null) return;
         satelliteController.requestSatelliteEnabled(
                 false /* enableSatellite */, false /* enableDemoMode */, false /* isEmergency */,
                 new IIntegerConsumer.Stub() {
