@@ -242,8 +242,15 @@ public class WapPushOverSms implements ServiceConnection {
                 result.statusCode = Intents.RESULT_SMS_GENERIC_ERROR;
                 return result;
             }
-            int headerLength = (int) pduDecoder.getValue32();
+            long headerLengthValue = pduDecoder.getValue32();
             index += pduDecoder.getDecodedDataLength();
+
+            if (headerLengthValue < 0 || headerLengthValue > pdu.length - index) {
+                Rlog.w(TAG, "Received PDU. Invalid header length: " + headerLengthValue);
+                result.statusCode = Intents.RESULT_SMS_GENERIC_ERROR;
+                return result;
+            }
+            int headerLength = (int) headerLengthValue;
 
             int headerStartIndex = index;
 
@@ -342,10 +349,10 @@ public class WapPushOverSms implements ServiceConnection {
             result.intentData = intentData;
             result.contentTypeParameters = pduDecoder.getContentParameters();
             result.statusCode = Activity.RESULT_OK;
-        } catch (ArrayIndexOutOfBoundsException aie) {
+        } catch (RuntimeException e) {
             // 0-byte WAP PDU or other unexpected WAP PDU contents can easily throw this;
             // log exception string without stack trace and return false.
-            Rlog.e(TAG, "ignoring dispatchWapPdu() array index exception: " + aie);
+            Rlog.e(TAG, "ignoring decodeWapPdu() runtime exception: " + e);
             result.statusCode = Intents.RESULT_SMS_GENERIC_ERROR;
         }
         return result;

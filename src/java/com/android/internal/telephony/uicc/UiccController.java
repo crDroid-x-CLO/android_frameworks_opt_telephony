@@ -746,12 +746,21 @@ public class UiccController extends Handler {
         }
         ArrayList<SimTypeInfo> simTypeInfos = (ArrayList<SimTypeInfo>) ar.result;
         logl("onGetSimTypeInfo: " + simTypeInfos);
+        boolean changed = false;
         for (SimTypeInfo simTypeInfo : simTypeInfos) {
             if (simTypeInfo == null || !isValidSlotIndex(simTypeInfo.mPhysicalSlotIndex)) {
                 logel("onGetSimTypeInfo invalid sim type info: " + simTypeInfo);
                 continue;
             }
-            mUiccSlots[simTypeInfo.mPhysicalSlotIndex].updateSimTypeInfo(simTypeInfo);
+            UiccSlot slot = mUiccSlots[simTypeInfo.mPhysicalSlotIndex];
+            int previousType = slot.getSimType();
+            int[] previousSupportedTypes = slot.getSupportedSimTypes();
+            slot.updateSimTypeInfo(simTypeInfo);
+            changed |= previousType != slot.getSimType()
+                    || !Arrays.equals(previousSupportedTypes, slot.getSupportedSimTypes());
+        }
+        if (changed) {
+            broadcastSimSlotStatusChanged();
         }
     }
 
@@ -1419,17 +1428,18 @@ public class UiccController extends Handler {
 
         ArrayList<IccSlotStatus> status = (ArrayList<IccSlotStatus>) ar.result;
 
-        if (!slotStatusChanged(status)) {
-            log("onGetSlotStatusDone: No change in slot status");
-            return;
-        }
-        logl("onGetSlotStatusDone: " + status);
-
+        // SIM type can change without a change in the slot-status payload.
         if (mFeatureFlags.supportSlotSwitching2psim1esimConfig()
                 && mRadioConfig.isGetOrSetSimTypeSupported()) {
             logl("onGetSlotStatusDone: request simType info");
             mRadioConfig.getSimTypeInfo(obtainMessage(EVENT_GET_SIM_TYPE_INFO));
         }
+
+        if (!slotStatusChanged(status)) {
+            log("onGetSlotStatusDone: No change in slot status");
+            return;
+        }
+        logl("onGetSlotStatusDone: " + status);
 
         sLastSlotStatus = status;
 
@@ -1569,7 +1579,10 @@ public class UiccController extends Handler {
                        + " does not match the number of Phones" + mPhoneIdToSlotId.length);
         }
 
-        // broadcast slot status changed
+        broadcastSimSlotStatusChanged();
+    }
+
+    private void broadcastSimSlotStatusChanged() {
         final BroadcastOptions options = BroadcastOptions.makeBasic();
         options.setBackgroundActivityStartsAllowed(true);
         Intent intent = new Intent(TelephonyManager.ACTION_SIM_SLOT_STATUS_CHANGED);

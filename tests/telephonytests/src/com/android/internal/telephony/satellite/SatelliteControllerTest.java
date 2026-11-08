@@ -130,6 +130,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -2070,6 +2071,28 @@ public class SatelliteControllerTest extends TelephonyTest {
     }
 
     @Test
+    public void testRegisterForSatelliteModemStateChanged_withoutService() {
+        doReturn(false).when(mMockSatelliteModemInterface).isSatelliteServiceSupported();
+        ISatelliteModemStateCallback callback = mock(ISatelliteModemStateCallback.class);
+
+        assertEquals(SATELLITE_RESULT_REQUEST_NOT_SUPPORTED,
+                mSatelliteControllerUT.registerForSatelliteModemStateChanged(callback));
+        verify(mMockSatelliteSessionController, never())
+                .registerForSatelliteModemStateChanged(callback);
+    }
+
+    @Test
+    public void testRegisterForSatelliteModemStateChanged_unsupportedModem() {
+        mSatelliteControllerUT.setIsSatelliteSupported(false);
+        ISatelliteModemStateCallback callback = mock(ISatelliteModemStateCallback.class);
+
+        assertEquals(SATELLITE_RESULT_NOT_SUPPORTED,
+                mSatelliteControllerUT.registerForSatelliteModemStateChanged(callback));
+        verify(mMockSatelliteSessionController, never())
+                .registerForSatelliteModemStateChanged(callback);
+    }
+
+    @Test
     public void testRegisterForSatelliteModemStateChanged() {
         ISatelliteModemStateCallback callback = new ISatelliteModemStateCallback.Stub() {
             @Override
@@ -3436,6 +3459,15 @@ public class SatelliteControllerTest extends TelephonyTest {
         when(mMockConfig.getSatelliteNtnConnectTypeByCarrierId(anyInt())).thenReturn(null);
         assertEquals(GLOBAL_NTN_CONNECT_TYPE_AUTOMATIC,
                 mSatelliteControllerUT.getSupportedConnectTypeMetrics(SUB_ID));
+    }
+
+    @Test
+    public void testCarrierSatelliteMode_withoutSupport_skipsConnectType() {
+        SatelliteController controller = spy(mSatelliteControllerUT);
+        doReturn(false).when(controller).isSatelliteSupportedViaCarrier(SUB_ID);
+
+        assertFalse(controller.isInSatelliteModeForCarrierRoaming(mPhone));
+        verify(controller, never()).getCarrierRoamingNtnConnectType(anyInt());
     }
 
     @Test
@@ -7033,6 +7065,8 @@ public class SatelliteControllerTest extends TelephonyTest {
         private boolean callOnlySuperMethod = false;
         public boolean isSatelliteEnabledOrBeingEnabled = false;
         public boolean mIsSatelliteRestrictedForCarrier = false;
+        // Tests default to the legacy ungated behavior; set to true to exercise the gate.
+        public boolean mSatelliteUnsupportedOnDevice = false;
 
         private boolean mLocationServiceEnabled = true;
 
@@ -7048,6 +7082,11 @@ public class SatelliteControllerTest extends TelephonyTest {
         @Nullable
         public Phone getSatellitePhone() {
             return super.getSatellitePhone();
+        }
+
+        @Override
+        public boolean isSatelliteSupportedOnDevice() {
+            return !mSatelliteUnsupportedOnDevice;
         }
 
         @Override
@@ -9211,6 +9250,28 @@ public class SatelliteControllerTest extends TelephonyTest {
                 eq(SatelliteConstants.SATELLITE_ELIGIBILITY_SOURCE_ENTITLEMENT));
         assertEquals(SatelliteConstants.SATELLITE_ELIGIBILITY_SOURCE_ENTITLEMENT,
                 mSatelliteControllerUT.getSatelliteEligibilitySource(SUB_ID));
+    }
+
+    @Test
+    public void testIsSatelliteSupportedOnDevice_seamDefaultsToSupported() {
+        assertTrue(mSatelliteControllerUT.isSatelliteSupportedOnDevice());
+
+        mSatelliteControllerUT.mSatelliteUnsupportedOnDevice = true;
+        assertFalse(mSatelliteControllerUT.isSatelliteSupportedOnDevice());
+    }
+
+    @Test
+    public void testIsDtcSatelliteTechnologySupported_notSupportedOnDevice_returnsFalse() {
+        mSatelliteControllerUT.mSatelliteUnsupportedOnDevice = true;
+
+        assertFalse(mSatelliteControllerUT.isDtcSatelliteTechnologySupported(SUB_ID, "00101"));
+    }
+
+    @Test
+    public void testIsCarrierRoamingNtnEligible_notSupportedOnDevice_returnsFalse() {
+        mSatelliteControllerUT.mSatelliteUnsupportedOnDevice = true;
+
+        assertFalse(mSatelliteControllerUT.isCarrierRoamingNtnEligible(mPhone));
     }
 
     @Test

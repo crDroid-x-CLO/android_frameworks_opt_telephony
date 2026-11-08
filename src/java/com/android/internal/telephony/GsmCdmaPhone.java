@@ -1559,7 +1559,7 @@ public class GsmCdmaPhone extends Phone {
         String newDialString = PhoneNumberUtils.stripSeparators(dialString);
 
         // If not emergency number, handle in-call MMI first if applicable
-        if (!dialArgs.isEmergency) {
+        if (!dialArgs.isEmergency && wrappedCallback == null) {
             if (mFeatureFlags.ignoreIncallMmiForEmergency() && isInEmergencyCall()) {
                 logd("dialInternal: ignore InCall MMI command during emergency call");
                 return null;
@@ -2174,6 +2174,15 @@ public class GsmCdmaPhone extends Phone {
         } else if (result != null) {
             AsyncResult.forMessage(result);
             result.sendToTarget();
+        }
+    }
+
+    private void logN1ModeFailure(String message, @Nullable AsyncResult result) {
+        if (result != null && result.exception instanceof CommandException exception
+                && exception.getCommandError() == CommandException.Error.REQUEST_NOT_SUPPORTED) {
+            logd(message + ": REQUEST_NOT_SUPPORTED");
+        } else {
+            Rlog.e(LOG_TAG, message, result == null ? null : result.exception);
         }
     }
 
@@ -3203,7 +3212,7 @@ public class GsmCdmaPhone extends Phone {
                 ar = (AsyncResult) msg.obj;
                 if (ar == null || ar.exception != null
                         || ar.result == null || !(ar.result instanceof Boolean)) {
-                    Rlog.e(LOG_TAG, "Failed to Retrieve N1 Mode", ar.exception);
+                    logN1ModeFailure("Failed to Retrieve N1 Mode", ar);
                     if (ar != null && ar.userObj instanceof Message) {
                         // original requester's message is stashed in the userObj
                         final Message rsp = (Message) ar.userObj;
@@ -3221,7 +3230,7 @@ public class GsmCdmaPhone extends Phone {
                 logd("EVENT_SET_N1_MODE_ENABLED_DONE");
                 ar = (AsyncResult) msg.obj;
                 if (ar == null || ar.exception != null) {
-                    Rlog.e(LOG_TAG, "Failed to Set N1 Mode", ar.exception);
+                    logN1ModeFailure("Failed to Set N1 Mode", ar);
                     // Set failed, so we have no idea at this point.
                     mModemN1Mode = null;
                 }

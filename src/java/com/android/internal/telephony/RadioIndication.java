@@ -1042,7 +1042,8 @@ public class RadioIndication extends IRadioIndication.Stub {
                             .setCellBandwidthDownlinkKhz(config.base.cellBandwidthDownlink)
                             .setNetworkType(
                                     ServiceState.rilRadioTechnologyToNetworkType(config.rat))
-                            .setPhysicalCellId(config.physicalCellId)
+                            .setPhysicalCellId(
+                                    RILUtils.sanitizePhysicalCellId(config.physicalCellId))
                             .setContextIds(config.contextIds.stream().mapToInt(x -> x).toArray())
                             .build());
                 } else if (obj instanceof android.hardware.radio.V1_6.PhysicalChannelConfig) {
@@ -1084,7 +1085,8 @@ public class RadioIndication extends IRadioIndication.Stub {
                             .setCellBandwidthUplinkKhz(config.cellBandwidthUplinkKhz)
                             .setNetworkType(
                                     ServiceState.rilRadioTechnologyToNetworkType(config.rat))
-                            .setPhysicalCellId(config.physicalCellId)
+                            .setPhysicalCellId(
+                                    RILUtils.sanitizePhysicalCellId(config.physicalCellId))
                             .setContextIds(config.contextIds.stream().mapToInt(x -> x).toArray())
                             .build());
                 } else {

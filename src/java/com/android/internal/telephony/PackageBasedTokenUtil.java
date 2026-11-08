@@ -48,10 +48,13 @@ public class PackageBasedTokenUtil {
     public static String generateToken(Context context, String packageName) {
         PackageManager packageManager = context.getPackageManager();
         String token = generatePackageBasedToken(packageManager, packageName);
+        if (token == null) {
+            return null;
+        }
 
         // Check for token confliction
         List<PackageInfo> packages =
-                packageManager.getInstalledPackages(PackageManager.GET_META_DATA);
+                packageManager.getInstalledPackages(PackageManager.GET_META_DATA | PackageManager.MATCH_ANY_USER);
 
         for (PackageInfo packageInfo : packages) {
             String otherPackageName = packageInfo.packageName;
@@ -63,6 +66,7 @@ public class PackageBasedTokenUtil {
             if (token.equals(otherToken)) {
                 Log.e(TAG, "token collides with other installed app.");
                 token = null;
+                break;
             }
         }
 
@@ -75,7 +79,7 @@ public class PackageBasedTokenUtil {
         try {
             // It is actually a certificate (public key), not a signature.
             signatures = packageManager.getPackageInfo(
-                    packageName, PackageManager.GET_SIGNATURES).signatures;
+                    packageName, PackageManager.GET_SIGNATURES | PackageManager.MATCH_ANY_USER).signatures;
         } catch (NameNotFoundException e) {
             Log.e(TAG, "Failed to find package with package name: " + packageName);
             return null;

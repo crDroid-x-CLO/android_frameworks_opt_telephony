@@ -1035,8 +1035,8 @@ public class ImsPhone extends ImsPhoneBase {
         // Need to make sure dialString gets parsed properly.
         newDialString = PhoneNumberUtils.stripSeparators(dialString);
 
-        // handle in-call MMI first if applicable
-        if (!dialArgs.isEmergency) {
+        // If not emergency number, handle in-call MMI first if applicable
+        if (!dialArgs.isEmergency && wrappedCallback == null) {
             if (mFeatureFlags.ignoreIncallMmiForEmergency() && mCT.isInEmergencyCall()) {
                 logd("dialInternal: ignore InCall MMI command during emergency call");
                 return null;
@@ -2838,7 +2838,7 @@ public class ImsPhone extends ImsPhoneBase {
                         loge("setPhoneNumberForSourceIms: PhoneNumberManager return error "
                                 + result.getErrorCode());
                     }
-                } catch (IllegalArgumentException e) {
+                } catch (RuntimeException e) {
                     loge("setPhoneNumberForSourceIms: failed to parse phone number, " + e);
                 }
             } else {
@@ -2921,7 +2921,7 @@ public class ImsPhone extends ImsPhoneBase {
             // "Global number" should be in E.164 format starting with "+" e.g. "+447539447777"
             return intermediate.filter(ssp -> ssp != null && ssp.startsWith("+"))
                     // Remove whatever after "@" for sip URI
-                    .map(ssp -> ssp.split("@")[0])
+                    .map(ssp -> ssp.split("@", 2)[0])
                     // Returns the first winner
                     .findFirst()
                     .orElse(null);
@@ -2929,7 +2929,7 @@ public class ImsPhone extends ImsPhoneBase {
             // non global number format
             return intermediate.filter(ssp -> ssp != null)
                     // Remove whatever after "@" for sip URI
-                    .map(ssp -> ssp.split("@")[0])
+                    .map(ssp -> ssp.split("@", 2)[0])
                     // regular expression, allow only number
                     .filter(ssp -> ssp.matches("^[0-9]+$"))
                     // Returns the first winner
